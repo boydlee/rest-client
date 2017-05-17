@@ -139,6 +139,73 @@ class CurlRestClient extends RestClient
         return $content;
     }
 
+
+
+    /**
+     * @param string $url
+     * @param string $method
+     * @param array $header
+     * @param array $data
+     * @param array $auth
+     * @param bool $forceInit
+     * @return mixed
+     * @throws \Exception
+     */
+    public function prepareQuery($url, $method = 'GET', $header = array(), $data = array(), $auth = array(), $forceInit = false)
+    {
+
+        if (true === $forceInit) {
+            $this->close(); // close previous channel
+        }
+
+        if (null === $this->curl) {
+            $this->curl = curl_init();
+        }
+
+        if ($method == 'GET')
+            $url = $url . '?' . http_build_query($data);
+
+        curl_setopt($this->curl, CURLOPT_URL, $url);
+        curl_setopt($this->curl, CURLOPT_HTTPHEADER, $header);
+        curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
+
+        if (!empty($auth)) {
+            curl_setopt($this->curl, CURLOPT_HTTPAUTH, $auth['CURLOPT_HTTPAUTH']);
+            curl_setopt($this->curl, CURLOPT_USERPWD, $auth['username'] . ':' . $auth['password']);
+        }
+
+        if (is_array($this->options)) {
+            foreach ($this->options as $option => $value) {
+                curl_setopt($this->curl, $option, $value);
+            }
+        }
+
+        if ($method == 'POST') {
+            curl_setopt($this->curl, CURLOPT_POST, true);
+            if (!empty($data)) {
+                curl_setopt($this->curl, CURLOPT_POSTFIELDS, http_build_query($data));
+            } else {
+                curl_setopt($this->curl, CURLOPT_POSTFIELDS, array());
+            }
+        } elseif ($method == 'PUT') {
+            curl_setopt($this->curl, CURLOPT_PUT, true);
+            if (!empty($data)) {
+                curl_setopt($this->curl, CURLOPT_POSTFIELDS, http_build_query($data));
+            } else {
+                curl_setopt($this->curl, CURLOPT_POSTFIELDS, array());
+            }
+        } elseif ($method == 'DELETE') {
+            curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+            if (!empty($data)) {
+                curl_setopt($this->curl, CURLOPT_POSTFIELDS, http_build_query($data));
+            } else {
+                curl_setopt($this->curl, CURLOPT_POSTFIELDS, array());
+            }
+        }
+
+        return $this->curl;
+    }
+
     /**
      * function call
      * @param string $method
